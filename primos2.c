@@ -6,7 +6,7 @@
 #include <stdbool.h>
 
 #define QNT 10
-#define BLOCKS 10000
+#define BLOCKS 1
 #define min(a,b) (a<b?a:b)
 int verifica_se_primo(long int);
 
@@ -28,27 +28,14 @@ long int readFrom(int fd, char *buff) {
 
 void parentFun(long int numero, bool imprimir) {
 	long int atual = 1;
-	int curProcess = 0;
 	char buff[20];
 	bool leitura = false;
-	while(atual <= numero) {
-		long int fim = min(atual + BLOCKS, numero);
+	int block = numero/QNT;
+	for(int i=0;i<QNT;i++) {
+		long int fim = i==QNT-1 ? numero: min(atual + block, numero);
 		int siz = sprintf(buff, "%ld %ld ", atual, fim);
 		atual = fim + 1;
-		write(ppwrite[curProcess][1], buff, siz);
-		long int value;
-		while(true) {
-			value = readFrom(ppread[curProcess][0], buff);
-			if(value == 0) break;
-			if(imprimir) {
-				printf("%ld eh primo.\n", value);
-			}
-		}
-		curProcess++;
-		if(curProcess >= QNT) {
-			curProcess = 0;
-			leitura = true;
-		}
+		write(ppwrite[i][1], buff, siz);
 	}
 	sprintf(buff, "0 ");
 	for(int i = 0;i<QNT;i++) {
@@ -67,8 +54,6 @@ void parentFun(long int numero, bool imprimir) {
 }
 void childFun(int childNum, int imprimir) {
 	char buff[20];
-	sprintf(buff, "0 ");
-	write(ppread[childNum][1], buff, 2);
 	while(true) {
 		long int ini = readFrom(ppwrite[childNum][0], buff);
 		if(ini == 0) break;
